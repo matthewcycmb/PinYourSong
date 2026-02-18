@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { hashIP } from "@/lib/utils";
 
+// Simple in-memory rate limiter for likes
+const likeRateMap = new Map<string, number[]>();
+
+function isRateLimited(ipHash: string, maxPerMinute = 15): boolean {
+  const now = Date.now();
+  const timestamps = likeRateMap.get(ipHash)?.filter((t) => now - t < 60_000) ?? [];
+  if (timestamps.length >= maxPerMinute) return true;
+  timestamps.push(now);
+  likeRateMap.set(ipHash, timestamps);
+  return false;
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -9,6 +21,10 @@ export async function POST(
   const { id: songId } = await params;
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const ipHash = hashIP(ip);
+
+  if (isRateLimited(ipHash)) {
+    return NextResponse.json({ error: "Slow down" }, { status: 429 });
+  }
 
   // Check if already liked
   const { data: existing } = await supabaseAdmin

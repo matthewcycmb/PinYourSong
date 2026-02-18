@@ -31,10 +31,10 @@ export async function GET(req: NextRequest) {
 
   const likedSet = new Set(likes?.map((l) => l.song_id) ?? []);
 
-  const songsWithLiked = songs.map((s) => ({
+  const songsWithLiked = songs.map(({ ip_hash, ...s }) => ({
     ...s,
     liked: likedSet.has(s.id),
-    is_owner: s.ip_hash === ipHash,
+    is_owner: ip_hash === ipHash,
   }));
 
   const { count } = await supabaseAdmin
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     songs: { spotifyId: string; reason: string; color?: string; bgTint?: string }[];
   };
 
-  if (!name || !songEntries?.length || songEntries.length > 2) {
+  if (!name || name.length > 50 || !songEntries?.length || songEntries.length > 2) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
@@ -119,7 +119,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    created.push({ ...data, liked: false, is_owner: true });
+    const { ip_hash: _ip, ...safeData } = data;
+    created.push({ ...safeData, liked: false, is_owner: true });
   }
 
   return NextResponse.json({ songs: created }, { status: 201 });
