@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { hashIP } from "@/lib/utils";
 
 export async function DELETE(
@@ -11,7 +11,7 @@ export async function DELETE(
   const ipHash = hashIP(ip);
 
   // Verify the song belongs to this user
-  const { data: song } = await supabaseAdmin
+  const { data: song } = await getSupabaseAdmin()
     .from("songs")
     .select("id, ip_hash")
     .eq("id", songId)
@@ -26,11 +26,12 @@ export async function DELETE(
   }
 
   // Delete associated likes first, then the song
-  await supabaseAdmin.from("likes").delete().eq("song_id", songId);
-  const { error } = await supabaseAdmin.from("songs").delete().eq("id", songId);
+  await getSupabaseAdmin().from("likes").delete().eq("song_id", songId);
+  const { error } = await getSupabaseAdmin().from("songs").delete().eq("id", songId);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DELETE /api/songs/[id] error:", error.message);
+    return NextResponse.json({ error: "Failed to delete song" }, { status: 500 });
   }
 
   return NextResponse.json({ deleted: true });

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import SongWall from "@/components/SongWall";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,7 @@ export default async function Home() {
   let totalCount = 0;
 
   try {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("songs")
       .select("*")
       .order("created_at", { ascending: false })
@@ -18,7 +18,7 @@ export default async function Home() {
       songs = data.map((s) => ({ ...s, liked: false }));
     }
 
-    const { count } = await supabaseAdmin
+    const { count } = await getSupabaseAdmin()
       .from("songs")
       .select("*", { count: "exact", head: true });
 

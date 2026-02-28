@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { hashIP } from "@/lib/utils";
 
 // Simple in-memory rate limiter for likes
@@ -27,7 +27,7 @@ export async function POST(
   }
 
   // Check if already liked
-  const { data: existing } = await supabaseAdmin
+  const { data: existing } = await getSupabaseAdmin()
     .from("likes")
     .select("id")
     .eq("song_id", songId)
@@ -36,14 +36,14 @@ export async function POST(
 
   if (existing) {
     // Unlike
-    await supabaseAdmin.from("likes").delete().eq("id", existing.id);
+    await getSupabaseAdmin().from("likes").delete().eq("id", existing.id);
   } else {
     // Like
-    await supabaseAdmin.from("likes").insert({ song_id: songId, ip_hash: ipHash });
+    await getSupabaseAdmin().from("likes").insert({ song_id: songId, ip_hash: ipHash });
   }
 
   // Fetch updated count
-  const { data: song } = await supabaseAdmin
+  const { data: song } = await getSupabaseAdmin()
     .from("songs")
     .select("likes_count")
     .eq("id", songId)

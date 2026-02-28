@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { getTrack } from "@/lib/spotify";
 import { extractColors } from "@/lib/color";
 import { hashIP } from "@/lib/utils";
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
   const orderCol = sort === "loved" ? "likes_count" : "created_at";
 
-  const { data: songs, error } = await supabaseAdmin
+  const { data: songs, error } = await getSupabaseAdmin()
     .from("songs")
     .select("*")
     .order(orderCol, { ascending: false })
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   // Check which songs this visitor has liked
   const songIds = songs.map((s) => s.id);
-  const { data: likes } = await supabaseAdmin
+  const { data: likes } = await getSupabaseAdmin()
     .from("likes")
     .select("song_id")
     .eq("ip_hash", ipHash)
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     is_owner: ip_hash === ipHash,
   }));
 
-  const { count } = await supabaseAdmin
+  const { count } = await getSupabaseAdmin()
     .from("songs")
     .select("*", { count: "exact", head: true });
 
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limit: max 2 songs per IP per 24 hours
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count } = await supabaseAdmin
+  const { count } = await getSupabaseAdmin()
     .from("songs")
     .select("*", { count: "exact", head: true })
     .eq("ip_hash", ipHash)
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     const color = entry.color || extracted.color;
     const bgTint = entry.bgTint || extracted.bgTint;
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("songs")
       .insert({
         spotify_id: track.id,
