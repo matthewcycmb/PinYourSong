@@ -43,7 +43,8 @@ async function getAccessToken(): Promise<string> {
 
   const data = JSON.parse(raw);
   if (!data.access_token) {
-    throw new Error(`Spotify token error: ${raw}`);
+    console.error("Spotify token error:", raw);
+    throw new Error("Failed to authenticate with Spotify");
   }
 
   cachedToken = data.access_token;
@@ -73,7 +74,8 @@ export async function searchTracks(query: string): Promise<SpotifySearchResult[]
     });
     const retryData = JSON.parse(retry);
     if (retryData.error) {
-      throw new Error(`Spotify search error: ${retryData.error.message}`);
+      console.error("Spotify search error:", retryData.error.message);
+      throw new Error("Spotify search failed");
     }
     return retryData.tracks.items.map((track: SpotifyTrack) => ({
       spotifyId: track.id,
@@ -105,7 +107,8 @@ export async function getTrack(spotifyId: string): Promise<SpotifyTrack> {
 
   const data = JSON.parse(raw);
   if (data.error) {
-    throw new Error(`Spotify track error: ${data.error.message}`);
+    console.error("Spotify track error:", data.error.message);
+    throw new Error("Failed to fetch track from Spotify");
   }
   return data;
 }

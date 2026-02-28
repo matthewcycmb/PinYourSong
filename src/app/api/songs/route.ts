@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
     .limit(100);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("GET /api/songs error:", error.message);
+    return NextResponse.json({ error: "Failed to load songs" }, { status: 500 });
   }
 
   // Check which songs this visitor has liked
@@ -69,7 +70,8 @@ export async function POST(req: NextRequest) {
     songs: { spotifyId: string; reason: string; color?: string; bgTint?: string }[];
   };
 
-  if (!name || name.length > 50 || !songEntries?.length || songEntries.length > 2) {
+  const trimmedName = typeof name === "string" ? name.trim() : "";
+  if (!trimmedName || trimmedName.length > 50 || !songEntries?.length || songEntries.length > 2) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
@@ -84,7 +86,11 @@ export async function POST(req: NextRequest) {
   const created = [];
 
   for (const entry of songEntries) {
-    if (!entry.reason || entry.reason.length > 80) {
+    if (!entry.spotifyId || !/^[a-zA-Z0-9]{22}$/.test(entry.spotifyId)) {
+      return NextResponse.json({ error: "Invalid song ID" }, { status: 400 });
+    }
+
+    if (!entry.reason || entry.reason.trim().length === 0 || entry.reason.length > 80) {
       return NextResponse.json(
         { error: "Reason must be 1-80 characters" },
         { status: 400 }
@@ -109,14 +115,15 @@ export async function POST(req: NextRequest) {
         color,
         bg_tint: bgTint,
         reason: entry.reason,
-        pinned_by: name,
+        pinned_by: trimmedName,
         ip_hash: ipHash,
       })
       .select()
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("POST /api/songs insert error:", error.message);
+      return NextResponse.json({ error: "Failed to save song" }, { status: 500 });
     }
 
     const { ip_hash: _ip, ...safeData } = data;

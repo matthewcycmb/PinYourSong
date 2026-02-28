@@ -32,8 +32,7 @@ export async function GET(req: NextRequest) {
     const results = await searchTracks(q);
     return NextResponse.json({ results });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Search failed";
-    console.error("Search route error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Search route error:", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Search failed" }, { status: 500 });
   }
 }
